@@ -1,0 +1,55 @@
+building,primaryspaceusage,sub_primaryspaceusage,sqm,energy
+Fox_lodging_Stephen,Lodging/residential,Dormitory,8019.7,electricity
+Fox_education_Virginia,Education,College Classroom,1186.7,electricity
+Fox_lodging_Stephan,Lodging/residential,Dormitory,3382.2,electricity
+Fox_office_Israel,Office,Office,11282.1,electricity
+Fox_education_Lilly,Education,College Laboratory,12236.3,electricity
+Fox_education_Kris,Education,Student Union,2837.5,electricity
+Fox_lodging_Warren,Lodging/residential,Dormitory,4562.3,electricity
+Fox_office_Clayton,Office,Office,488.5,electricity
+Fox_office_Demetrius,Office,Office,14463.3,electricity
+Hog_education_Hallie,Education,College Laboratory,2996.7,electricity
+Hog_education_Wayne,Education,College Laboratory,7964.8,electricity
+Hog_office_Mari,Office,Office,6302.4,electricity
+Hog_lodging_Shanti,Lodging/residential,Dormitory,24355.1,electricity
+Hog_education_Jordan,Education,College Classroom,12362.8,electricity
+Hog_office_Lavon,Office,Office,1530.3,electricity
+Hog_office_Almeda,Office,Office,6683.1,electricity
+Hog_lodging_Shonda,Lodging/residential,Dormitory,21437.1,electricity
+Hog_lodging_Mauricio,Lodging/residential,Dormitory,16251.0,electricity
+Bull_education_Magaret,Education,College Classroom,7954.6,steam
+Bull_education_Myra,Education,College Classroom,5527.5,steam
+Bull_lodging_Melissa,Lodging/residential,Dormitory,27992.3,steam
+Bull_education_Juan,Education,College Classroom,26212.8,steam
+Bull_lodging_Lettie,Lodging/residential,Dormitory,3683.4,steam
+Bull_lodging_Travis,Lodging/residential,Dormitory,69275.1,steam
+Bull_office_Trevor,Office,Office,3546.4,steam
+Bull_office_Chantel,Office,Office,9654.9,steam
+Bull_office_Yvonne,Office,Office,18019.5,steam
+Hog_education_Wayne,Education,College Laboratory,7964.8,steam
+Hog_office_Mari,Office,Office,6302.4,steam
+Hog_office_Cornell,Office,Office,62385.0,steam
+Hog_office_Sonny,Office,Office,5837.7,steam
+Hog_education_Janell,Education,College Laboratory,26718.3,steam
+Hog_lodging_Mauricio,Lodging/residential,Dormitory,16251.0,steam
+Hog_education_Sonia,Education,College Laboratory,17103.3,steam
+Hog_lodging_Ora,Lodging/residential,Dormitory,21678.1,steam
+Hog_lodging_Celeste,Lodging/residential,Dormitory,10874.7,steam
+Fox_lodging_Stephen,Lodging/residential,Dormitory,8019.7,chilledwater
+Fox_lodging_Stephan,Lodging/residential,Dormitory,3382.2,chilledwater
+Fox_education_Lilly,Education,College Laboratory,12236.3,chilledwater
+Fox_lodging_Warren,Lodging/residential,Dormitory,4562.3,chilledwater
+Fox_education_Andre,Education,College Laboratory,17044.0,chilledwater
+Fox_office_Margarita,Office,Office,2187.8,chilledwater
+Fox_office_Berniece,Office,Office,2173.2,chilledwater
+Fox_office_Alice,Office,Office,18806.8,chilledwater
+Fox_education_Leota,Education,College Laboratory,12311.3,chilledwater
+Bull_education_Magaret,Education,College Classroom,7954.6,chilledwater
+Bull_office_Myron,Office,Office,5583.1,chilledwater
+Bull_education_Myra,Education,College Classroom,5527.5,chilledwater
+Bull_education_Dan,Education,College Laboratory,11941.4,chilledwater
+Bull_lodging_Melissa,Lodging/residential,Dormitory,27992.3,chilledwater
+Bull_lodging_Caren,Lodging/residential,Dormitory,16509.6,chilledwater
+Bull_office_Lilla,Office,Office,16890.2,chilledwater
+Bull_office_Efren,Office,Office,8005.2,chilledwater
+Bull_lodging_Lettie,Lodging/residential,Dormitory,3683.4,chilledwater

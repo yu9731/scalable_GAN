@@ -1,0 +1,28 @@
+,primaryspaceusage,sub_primaryspaceusage,sqm,energy
+Robin_lodging_Dorthy,Lodging/residential,Dormitory,5842.9,electricity
+Robin_education_Zenia,Education,College Laboratory,6337.0,electricity
+Robin_office_Dina,Office,Office,4213.0,electricity
+Robin_education_Derick,Education,College Laboratory,13965.0,electricity
+Robin_education_Della,Education,College Classroom,499.3,electricity
+Robin_office_Sammie,Office,Office,4802.0,electricity
+Robin_office_Gayle,Office,Office,4161.0,electricity
+Robin_lodging_Phillip,Lodging/residential,Dormitory,6181.0,electricity
+Robin_lodging_Elmer,Lodging/residential,Dormitory,9565.0,electricity
+Hog_education_Wayne,Education,College Laboratory,7964.8,steam
+Hog_office_Mari,Office,Office,6302.4,steam
+Hog_office_Cornell,Office,Office,62385.0,steam
+Hog_office_Sonny,Office,Office,5837.7,steam
+Hog_education_Janell,Education,College Laboratory,26718.3,steam
+Hog_lodging_Mauricio,Lodging/residential,Dormitory,16251.0,steam
+Hog_education_Sonia,Education,College Laboratory,17103.3,steam
+Hog_lodging_Ora,Lodging/residential,Dormitory,21678.1,steam
+Hog_lodging_Celeste,Lodging/residential,Dormitory,10874.7,steam
+Eagle_office_Lamont,Office,Office,1453.8,chilledwater
+Eagle_office_Ryan,Office,Office,2092.5,chilledwater
+Eagle_education_Roman,Education,Research,18621.7,chilledwater
+Eagle_office_Mandi,Office,Office,820.9,chilledwater
+Eagle_lodging_Edgardo,Lodging/residential,Housing,5392.2,chilledwater
+Eagle_education_Cassie,Education,Research,3066.9,chilledwater
+Eagle_education_Peter,Education,Research,41103.8,chilledwater
+Eagle_lodging_Dawn,Lodging/residential,Housing,5785.9,chilledwater
+Eagle_lodging_Tressa,Lodging/residential,Housing,5032.7,chilledwater
