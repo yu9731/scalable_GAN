@@ -25,39 +25,20 @@ num_subtypes = 5
 num_energy = 3
 
 e_dim = 64
-batch_size = 128 # 128
+batch_size = 128
 epochs = 200
 
 lambda_l1 = 100.0
 
-save_dir = "when2heat-gnn/mixed_energy/model"
+save_dir = "data/model"
 os.makedirs(save_dir, exist_ok=True)
 
-X_train = np.load("when2heat-gnn/mixed_energy/mixed_train.npy").astype(np.float32) #[334*36:334*54]
-building_idx = np.load("when2heat-gnn/mixed_energy/mixed_building_idx_train.npy").astype(np.int32) #[334*36:334*54]
-Node_feat = np.load("when2heat-gnn/mixed_energy/Node_feat.npy").astype(np.float32) #[36:54]
-
-# type_lst = ['education', 'office', 'lodging']
-#type_lst = ['electricity', 'steam', 'chilledwater']
-
-#for e, type in enumerate(type_lst):
-    # X_train = np.load("when2heat-gnn/mixed_energy/mixed_train_usage_type.npy").astype(np.float32)[334*e*18:334*(e+1)*18]
-    # building_idx = np.load("when2heat-gnn/mixed_energy/mixed_building_idx_train_usage_type.npy").astype(np.int32)[334*e*18:334*(e+1)*18]
-    # Node_feat = np.load("when2heat-gnn/mixed_energy/Node_feat_usage_type.npy").astype(np.float32)[e*18:(e+1)*18]
-
-    # X_train = np.load("when2heat-gnn/mixed_energy/mixed_train.npy").astype(np.float32)[334*e*18:334*(e+1)*18]
-    # building_idx = np.load("when2heat-gnn/mixed_energy/mixed_building_idx_train.npy").astype(np.int32)[334*e*18:334*(e+1)*18]
-    # Node_feat = np.load("when2heat-gnn/mixed_energy/Node_feat.npy").astype(np.float32)[e*18:(e+1)*18]
-
-#X_train = np.load("when2heat-gnn/mixed_energy/mixed_energy/mixed_train_continual_30.npy").astype(np.float32)#[334*36:334*54]
-#building_idx = np.load("when2heat-gnn/mixed_energy/mixed_energy/mixed_building_idx_continual_30_train.npy").astype(np.int32)#[334*36:334*54]
-#Node_feat = np.load("when2heat-gnn/mixed_energy/continual/Node_feat_continual.npy").astype(np.float32)#[36:54]
+X_train = np.load("data/train_data/mixed_train.npy").astype(np.float32)
+building_idx = np.load("data/train_data/mixed_building_idx_train.npy").astype(np.int32)
+Node_feat = np.load("data/train_data/Node_feat.npy").astype(np.float32)
 
 N = Node_feat.shape[0]
 
-print("X_train shape:", X_train.shape)
-print("building_idx shape:", building_idx.shape)
-print("Node_feat shape:", Node_feat.shape)
 
 sqm = Node_feat[:, 3:4]
 sqm_mean = sqm.mean(axis=0, keepdims=True)
@@ -179,8 +160,8 @@ def Generator(pred_hour, variable_num, e_dim=64):
     x = tf.keras.layers.Concatenate(axis=-1)([inputs, e_map])
 
     # time-aware encoder
-    x1 = downsample(64, 3, (2,1), apply_batchnorm=False)(x)   # 48 -> 24
-    x2 = downsample(128, 3, (2,1))(x1)                        # 24 -> 12
+    x1 = downsample(64, 3, (2,1), apply_batchnorm=False)(x)   
+    x2 = downsample(128, 3, (2,1))(x1)                        
 
     # bottleneck
     b = dilated(256, 3, (1,1))(x2)
@@ -189,10 +170,10 @@ def Generator(pred_hour, variable_num, e_dim=64):
     b = dilated(256, 3, (8,1))(b)
 
     # decoder
-    u1 = upsample(128, 3, (1,1))(b)                           # 12 -> 24
+    u1 = upsample(128, 3, (1,1))(b)                           
     u1 = tf.keras.layers.Concatenate()([u1, x2])
 
-    u2 = upsample(64, 3, (2,1))(u1)                           # 24 -> 48
+    u2 = upsample(64, 3, (2,1))(u1)                           
     u2 = tf.keras.layers.Concatenate()([u2, x1])
 
     out = tf.keras.layers.Conv2DTranspose(1, 3, (2,1), padding='same',activation='softplus')(u2)
@@ -248,11 +229,10 @@ def get_points_tf(batch_size, pred_hour, variable_num, target_var_idx=1):
     mask_len = tf.random.uniform(
         shape=(),
         minval=6,
-        maxval=43,   # upper bound is exclusive
+        maxval=43,
         dtype=tf.int32
     )
 
-    # Random start point: [0, pred_hour - mask_len]
     start_t = tf.random.uniform(
         shape=(),
         minval=0,
@@ -311,13 +291,11 @@ def train_step(x_batch, b_idx):
         E_all = naive_embed(Node_feat_int_tf, Node_feat_float_tf, training=True)
         naive_embed.summary()
 
-        e_batch = tf.gather(E_all, tf.cast(b_idx, tf.int32))                          # (bs, e_dim)
+        e_batch = tf.gather(E_all, tf.cast(b_idx, tf.int32))
 
-        # masked input
         gen_input = x_batch * (1.0 - masks)
-        # generator
         gen_output = generator([gen_input, e_batch], training=True)
-        # discriminator
+
         disc_real_output = discriminator([gen_input, x_batch, e_batch], training=True)
         disc_generated_output = discriminator([gen_input, gen_output, e_batch], training=True)
 
@@ -333,11 +311,6 @@ def train_step(x_batch, b_idx):
     grads_g = tape.gradient(total_g_loss, generator.trainable_variables)
     grads_d = tape.gradient(total_d_loss, discriminator.trainable_variables)
     grads_embed = tape.gradient(total_g_loss, naive_embed.trainable_variables)
-
-    # gradient clipping
-    grads_g = [tf.clip_by_norm(g, 5.0) if g is not None else None for g in grads_g]
-    grads_d = [tf.clip_by_norm(g, 5.0) if g is not None else None for g in grads_d]
-    grads_embed = [tf.clip_by_norm(g, 5.0) if g is not None else None for g in grads_embed]
 
     optimizer_g.apply_gradients(zip(grads_g, generator.trainable_variables))
     optimizer_d.apply_gradients(zip(grads_d, discriminator.trainable_variables))
@@ -379,17 +352,6 @@ for epoch in range(epochs + 1):
         f"time={time.time()-start:.1f}s"
     )
 
-    #if epoch % 10 == 0:
-        #generator.save(os.path.join(save_dir, f"generator_aphere_random_{type}.h5"))
-        # discriminator.save(os.path.join(save_dir, "discriminator_aphere_ori_30.h5"))
-        #naive_embed.save_weights(os.path.join(save_dir, f"naive_embed_random_{type}.weights.h5"))
-
-process = psutil.Process(os.getpid())
-memory_before = process.memory_info().rss / 1024**2  # MB
-
-end_time = time.time()
-memory_after = process.memory_info().rss / 1024**2
-
-training_time = end_time - start_time
-print(f"Total training time: {training_time:.2f} seconds")
-print(f"Memory increase: {memory_after:.2f} MB")
+    if epoch % 10 == 0:
+        generator.save(os.path.join(save_dir, f"generator_aphere_random_{type}.h5"))
+        naive_embed.save_weights(os.path.join(save_dir, f"naive_embed_random_{type}.weights.h5"))
