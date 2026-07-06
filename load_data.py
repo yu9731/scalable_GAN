@@ -145,8 +145,8 @@ B_test, D_test, T_win_test, F_test = data_test.shape
 building_idx = np.repeat(np.arange(B//334), 334)
 building_idx_test = np.repeat(np.arange(B_test//180), 180)
 
-np.save(f'mixed_train.npy', data_train)
-np.save(f'mixed_test.npy', data_test)
+np.save(f'data/train_data/mixed_train.npy', data_train)
+np.save(f'data/train_data/mixed_test.npy', data_test)
 
-np.save(f'mixed_building_idx_train.npy', building_idx)
-np.save(f'mixed_building_idx_test.npy', building_idx_test)
+np.save(f'data/train_data/mixed_building_idx_train.npy', building_idx)
+np.save(f'data/train_data/mixed_building_idx_test.npy', building_idx_test)
