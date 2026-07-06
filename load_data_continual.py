@@ -49,15 +49,15 @@ def filtering_by_hours(train_data, pd_time, Timestamp):
 
 for i, energy in enumerate(energy_lst):
     pd_energy = pd.read_csv(f'data/{energy}_continual.csv', index_col=0, parse_dates=True)
-    pd_energy_cold_month = pd_energy.loc['2016-02-01 00:00:00':'2016-03-16 23:00:00', :]
-    pd_energy_warm_month = pd_energy.loc['2016-05-01 00:00:00':'2016-06-14 23:00:00', :]
+    pd_energy_cold_month = pd_energy.loc['2016-02-01 00:00:00':'2016-02-14 23:00:00', :]   # Adjust based on the data volume
+    pd_energy_warm_month = pd_energy.loc['2016-05-01 00:00:00':'2016-05-14 23:00:00', :]
     pd_energy_train = pd.concat([pd_energy_cold_month, pd_energy_warm_month], axis=0)
     pd_energy_test = pd.read_csv(f'data/{energy}_continual_test.csv', index_col=0, parse_dates=True)
 
     for j in range(9):
         cnt = j // 9
-        np_temp_cold = pd_weather[pd_weather['site_id']==location_lst[i][cnt]].loc['2016-02-01 00:00:00':'2016-03-16 23:00:00', 'airTemperature'].resample('60min').interpolate('linear').to_frame().values
-        np_temp_warm = pd_weather[pd_weather['site_id']==location_lst[i][cnt]].loc['2016-05-01 00:00:00':'2016-06-14 23:00:00', 'airTemperature'].resample('60min').interpolate('linear').to_frame().values
+        np_temp_cold = pd_weather[pd_weather['site_id']==location_lst[i][cnt]].loc['2016-02-01 00:00:00':'2016-02-15 23:00:00', 'airTemperature'].resample('60min').interpolate('linear').to_frame().values
+        np_temp_warm = pd_weather[pd_weather['site_id']==location_lst[i][cnt]].loc['2016-05-01 00:00:00':'2016-05-15 23:00:00', 'airTemperature'].resample('60min').interpolate('linear').to_frame().values
         np_temp_cold = np_temp_cold.reshape((np_temp_cold.shape[0],1))
         np_temp_warm = np_temp_warm.reshape((np_temp_warm.shape[0],1))
         np_temp = np.vstack([np_temp_cold, np_temp_warm])
@@ -77,7 +77,7 @@ for i, energy in enumerate(energy_lst):
         np_elec[24*continual_day*(j+9*i): 24*continual_day*(j+9*i+1), :] = np_
         np_elec_test[24*181*(j+9*i): 24*181*(j+9*i+1), :] = np_test_
 
-time_ranges = [('2016-02-01 00:00:00', '2016-03-16 23:00:00'), ('2016-05-01 00:00:00', '2016-06-14 23:00:00')]
+time_ranges = [('2016-02-01 00:00:00', '2016-02-15 23:00:00'), ('2016-05-01 00:00:00', '2016-05-15 23:00:00')]
 
 train_timestamp_lst = [ts for start, end in time_ranges for ts in pd.date_range(start=start, end=end, freq='h')]
 test_timestamp_lst = [pd.to_datetime('2017-01-01 00:00:00') + pd.Timedelta(i, 'h') for i in range(24*181)]
@@ -127,13 +127,6 @@ for b in range(num_buildings):
         min_data = np.min(np_train[train_start:train_end, i])
         max_data = np.max(np_train[train_start:train_end, i])
 
-        if i == 1:
-            np.save(f'min_max_continual/min_{b}_{continual_day}.npy', min_data)
-            np.save(f'min_max_continual/max_{b}_{continual_day}.npy', max_data)
-
-        np_train[train_start:train_end, i] = (np_train[train_start:train_end, i] - min_data) / (max_data - min_data)
-        np_test[test_start:test_end, i] = (np_test[test_start:test_end, i] - min_data) / (max_data - min_data)
-
 data_train = np.zeros(((continual_day-1)*num_buildings, 48, 4))   # 29 # 59 # 89
 data_test = np.zeros((180*num_buildings, 48, 4))
 
@@ -160,8 +153,8 @@ B_test, D_test, T_win_test, F_test = data_test.shape
 building_idx = np.repeat(np.arange(B//(continual_day-1)), (continual_day-1))
 building_idx_test = np.repeat(np.arange(B_test//180), 180)
 
-np.save(f'data/mixed_train_continual_{continual_day}.npy', data_train)
-np.save(f'data/mixed_test_continual_{continual_day}.npy', data_test)
+np.save(f'data/train_data/mixed_train_continual_{continual_day}.npy', data_train)
+np.save(f'data/train_data/mixed_test_continual_{continual_day}.npy', data_test)
 
-np.save(f'mixed_building_idx_continual_{continual_day}_train.npy', building_idx)
-np.save(f'mixed_building_idx_continual_{continual_day}_test.npy', building_idx_test)
+np.save(f'data/train_data/mixed_building_idx_continual_{continual_day}_train.npy', building_idx)
+np.save(f'data/train_data/mixed_building_idx_continual_{continual_day}_test.npy', building_idx_test)
