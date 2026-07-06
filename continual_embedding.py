@@ -18,10 +18,6 @@ if gpus:
         print("Error enabling memory growth:", e)
 
 
-# ============================================================
-# Config
-# ============================================================
-
 pred_hour = 48
 variable_num = 4
 
@@ -45,42 +41,19 @@ start_t = 24
 batch_size_rep = 128
 batch_size_new = 64
 
-save_dir = "when2heat-gnn/mixed_energy/model/continual"
+save_dir = "data/model/continual"
 os.makedirs(save_dir, exist_ok=True)
 
-norm_dir = "when2heat-gnn/mixed_energy/continual"
+norm_dir = "data/continual"
 os.makedirs(norm_dir, exist_ok=True)
 
-X_rep = np.load(
-    "when2heat-gnn/mixed_energy/mixed_train.npy"
-).astype(np.float32)
+X_rep = np.load("data/train_data/mixed_train.npy").astype(np.float32)
+building_idx_rep = np.load("data/train_data/mixed_building_idx_train.npy").astype(np.int32)
+Node_feat_rep = np.load("data/train_data/Node_feat.npy").astype(np.float32)
+X_new = np.load(f"data/train_data/mixed_train_continual_{data_length}.npy").astype(np.float32)
 
-building_idx_rep = np.load(
-    "when2heat-gnn/mixed_energy/mixed_building_idx_train.npy"
-).astype(np.int32)
-
-Node_feat_rep = np.load(
-    "when2heat-gnn/mixed_energy/Node_feat.npy"
-).astype(np.float32)
-
-X_new = np.load(
-    f"when2heat-gnn/mixed_energy/continual/mixed_train_continual_{data_length}.npy"
-).astype(np.float32)
-
-print(X_new.shape)
-
-building_idx_new = np.load(
-    f"when2heat-gnn/mixed_energy/continual/mixed_building_idx_continual_{data_length}_train.npy"
-).astype(np.int32)
-
-Node_feat_new = np.load(
-    "when2heat-gnn/mixed_energy/continual/Node_feat_continual.npy"
-).astype(np.float32)
-
-
-# ============================================================
-# Normalization
-# ============================================================
+building_idx_new = np.load(f"data/train_data/mixed_building_idx_continual_{data_length}_train.npy").astype(np.int32)
+Node_feat_new = np.load("data/train_data/Node_feat_continual.npy").astype(np.float32)
 
 def normalize_per_building_minmax(
     X,
@@ -297,13 +270,8 @@ _ = naive_embed_new(
     training=True
 )
 
-
-# ============================================================
-# Load generator
-# ============================================================
-
 generator = load_model(
-    "when2heat-gnn/mixed_energy/model/generator_aphere_random.h5",
+    "data/model/generator_aphere.h5",
     compile=False
 )
 
@@ -392,7 +360,6 @@ def Discriminator(pred_hour, variable_num, e_dim=64):
 
 
 discriminator = Discriminator(pred_hour, variable_num, e_dim)
-
 loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
 
@@ -679,11 +646,6 @@ def train_step(x_new, b_new, x_rep, b_rep):
         g_l1_rep
     )
 
-
-# ============================================================
-# Training loop
-# ============================================================
-
 history = {
     "G": [],
     "D": [],
@@ -774,42 +736,18 @@ for epoch in range(epochs + 1):
     )
 
     if epoch % 10 == 0:
-        generator.save(
-            os.path.join(save_dir, f"generator_continual_embedded_{data_length}.h5")
-        )
+        generator.save(os.path.join(save_dir, f"generator_continual_embedded_{data_length}.h5"))
+        discriminator.save(os.path.join(save_dir, f"discriminator_continual_embedded_{data_length}.h5"))
+        naive_embed_new.save_weights(os.path.join(save_dir, f"continual_embed_{data_length}.weights.h5"))
 
-        discriminator.save(
-            os.path.join(save_dir, f"discriminator_continual_embedded_{data_length}.h5")
-        )
-
-        naive_embed_new.save_weights(
-            os.path.join(save_dir, f"continual_embed_{data_length}.weights.h5")
-        )
-
-        with open(
-            os.path.join(save_dir, f"training_history_{data_length}.json"),
-            "w"
-        ) as f:
+        with open(os.path.join(save_dir, f"training_history_{data_length}.json"), "w") as f:
             json.dump(history, f, indent=4)
 
         print(f"Saved checkpoint at epoch {epoch}")
 
-generator.save(
-    os.path.join(save_dir, f"generator_continual_embedded_{data_length}.h5")
-)
+generator.save(os.path.join(save_dir, f"generator_continual_embedded_{data_length}.h5"))
+discriminator.save(os.path.join(save_dir, f"discriminator_continual_embedded_{data_length}.h5"))
+naive_embed_new.save_weights(os.path.join(save_dir, f"continual_embed_{data_length}.weights.h5"))
 
-discriminator.save(
-    os.path.join(save_dir, f"discriminator_continual_embedded_{data_length}.h5")
-)
-
-naive_embed_new.save_weights(
-    os.path.join(save_dir, f"continual_embed_{data_length}.weights.h5")
-)
-
-with open(
-    os.path.join(save_dir, f"training_history_{data_length}.json"),
-    "w"
-) as f:
+with open(os.path.join(save_dir, f"training_history_{data_length}.json"), "w") as f:
     json.dump(history, f, indent=4)
-
-print("Training finished.")
