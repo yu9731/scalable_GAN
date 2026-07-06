@@ -20,13 +20,10 @@ variable_num = 4
 e_dim = 64
 building_sample = 181 - (pred_hour - 24) // 24
 
-building_id_lst = [i for i in range(0, 54, 1)]
-#building_id_lst = [i for i in range(0, 27, 1)]
+building_id_lst = [i for i in range(0, 27, 1)]
 
 for data_length in data_length_lst:
-    pd_nrmse = pd.DataFrame(columns=["building", "method", "missing duration", "nrmse"])
-    pd_mae = pd.DataFrame(columns=["building", "method", "missing duration", "mae"])
-
+    
     def get_points(pred_hour, batch_size, variable_num, mask_len):
         mask = np.zeros((batch_size, pred_hour, variable_num, 1), dtype=np.float32)
         start_t = np.random.randint(0, pred_hour - mask_len + 1)
@@ -178,8 +175,8 @@ for data_length in data_length_lst:
 
         print(f"✅ Manual loading finished. Assigned {assigned} variables.")
 
-    embed_weights_path = f"when2heat-gnn/mixed_energy/model/continual/continual_embed_{data_length}.weights.h5"
-    Node_feat_new = np.load("when2heat-gnn/mixed_energy/continual/Node_feat_continual.npy").astype(np.float32)
+    embed_weights_path = f"data/model/continual_embed_{data_length}.weights.h5"
+    Node_feat_new = np.load("data/train_data/Node_feat_continual.npy").astype(np.float32)
 
     N_new = Node_feat_new.shape[0]
 
@@ -201,10 +198,7 @@ for data_length in data_length_lst:
         print("Using continual-only embedding table.")
 
     else:
-        Node_feat_rep = np.load(
-            "when2heat-gnn/mixed_energy/Node_feat.npy"
-        ).astype(np.float32)
-
+        Node_feat_rep = np.load("data/train_data/Node_feat.npy").astype(np.float32)
         N_old = Node_feat_rep.shape[0]
 
         if saved_N != N_old + N_new:
@@ -221,12 +215,6 @@ for data_length in data_length_lst:
 
         N = saved_N
         use_global_old_new_embedding = True
-
-        print("Using old+new global embedding table.")
-        print("N_old:", N_old)
-        print("N_new:", N_new)
-        print("N_total:", N)
-
 
     num_primary = 3
     num_subtypes = 5
@@ -249,11 +237,6 @@ for data_length in data_length_lst:
     Node_feat_int_tf = tf.constant(node_ids_int, dtype=tf.int32)
     Node_feat_float_tf = tf.constant(node_feat_float, dtype=tf.float32)
 
-
-    # ============================================================
-    # Build and load embedding
-    # ============================================================
-
     naive_embed = NaiveEmbedding(
         N=N,
         num_primary=num_primary,
@@ -266,7 +249,6 @@ for data_length in data_length_lst:
         dropout=0.1
     )
 
-    # build once before loading weights
     _ = naive_embed(
         Node_feat_int_tf,
         Node_feat_float_tf,
@@ -278,20 +260,15 @@ for data_length in data_length_lst:
         embed_weights_path
     )
 
-    # Precompute node embeddings for all buildings
     E_all = naive_embed(
         Node_feat_int_tf,
         Node_feat_float_tf,
         training=False
     )   # (N, e_dim)
 
-    #X_test = np.load(f"when2heat-gnn/mixed_energy/continual/mixed_test_continual_{data_length}.npy")
-    #BID_test = np.load(f"when2heat-gnn/mixed_energy/continual/mixed_building_idx_continual_{data_length}_test.npy").astype(np.int32)
+    X_test = np.load(f"data/train_data/mixed_test_continual_{data_length}.npy")
+    BID_test = np.load(f"data/train_data/mixed_building_idx_continual_{data_length}_test.npy").astype(np.int32)
 
-    X_test = np.load(f"when2heat-gnn/mixed_energy/mixed_test.npy")
-    BID_test = np.load(f"when2heat-gnn/mixed_energy/mixed_building_idx_test.npy").astype(np.int32)
-
-    '''
     def normalize_test_with_saved_minmax(
         X_test,
         building_idx_test,
@@ -328,7 +305,7 @@ for data_length in data_length_lst:
 
 
     stats = load_minmax_stats(
-        f"when2heat-gnn/mixed_energy/continual/new_building_minmax_stats_{data_length}.json"
+        f"data/train_data/new_building_minmax_stats_{data_length}.json"
     )
 
     X_test = normalize_test_with_saved_minmax(
@@ -337,14 +314,9 @@ for data_length in data_length_lst:
         stats=stats,
         clip=True
     )
-    '''
-
-    # ============================================================
-    # Load generator
-    # ============================================================
 
     generator = load_model(
-        f"when2heat-gnn/mixed_energy/model/continual/generator_continual_embedded_{data_length}.h5",
+        f"data/model/generator_continual_embedded_{data_length}.h5",
         compile=False
     )
     print("✅ Generator loaded.")
@@ -367,22 +339,18 @@ for data_length in data_length_lst:
             pred_chunks = []
             true_chunks = []
 
-            max_data = np.load(f"when2heat-gnn/min_max/max_{k}.npy")
-            min_data = np.load(f"when2heat-gnn/min_max/min_{k}.npy")
+            max_data = np.load(f"data/min_max_continual/max_{k}.npy")
+            min_data = np.load(f"data/min_max_continual/min_{k}.npy")
 
-            batch_size = 1
 
-            #for i in range(0, 90, batch_size):
-            for i in range(90, 180, batch_size):
+            for i in range(0, 90, 2):
+            #for i in range(90, 180, 2):
                 xb = tf.convert_to_tensor(
                     x_in[i:i + batch_size],
                     dtype=tf.float32
                 )
 
                 b = int(BID[i])
-
-                #if use_global_old_new_embedding:
-                    #b = b + N_old
 
                 e = E_all[b:b + 1]
 
@@ -409,8 +377,8 @@ for data_length in data_length_lst:
             pred_load_norm = y_pred[:, :, 1, 0].reshape(-1)
             true_load_norm = y_true[:, :, 1, 0].reshape(-1)
 
-            pred_load = pred_load_norm  #* (max_data - min_data) + min_data
-            true_load = true_load_norm  #* (max_data - min_data) + min_data
+            pred_load = pred_load_norm  * (max_data - min_data) + min_data
+            true_load = true_load_norm  * (max_data - min_data) + min_data
 
             denom = np.max(true_load) - np.min(true_load)
 
@@ -427,16 +395,8 @@ for data_length in data_length_lst:
             print(f"NRMSE = {NRMSE:.4f}")
             print("====================================")
 
-            #plt.figure(figsize=(10, 4))
-            #plt.plot(true_load[0:24 * 30], label="True Load")
-            #plt.plot(pred_load[0:24 * 30], label="Simulated Load")
-            #plt.legend()
-            #plt.show()
-
-            pd_nrmse.loc[k] = [building_id, "Continual", mask_len, NRMSE]
-            pd_mae.loc[k] = [building_id, "Continual", mask_len, NMAE]
-
-        #pd_nrmse.to_csv(f"result/continual/mixed_continual_{data_length}_{mask_len}.csv", index=False) #_warm_month
-        #pd_mae.to_csv(f"result/continual/NMAE_mixed_continual_{data_length}_{mask_len}.csv", index=False)
-        pd_nrmse.to_csv(f"result/continual/mixed_forgetting_{data_length}_{mask_len}_warm_month.csv", index=False)  # _warm_month
-        pd_mae.to_csv(f"result/continual/NMAE_mixed_forgetting_{data_length}_{mask_len}_warm_month.csv", index=False)
+            plt.figure(figsize=(10, 4))
+            plt.plot(true_load[0:24 * 30], label="True Load")
+            plt.plot(pred_load[0:24 * 30], label="Simulated Load")
+            plt.legend()
+            plt.show()
