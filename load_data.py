@@ -115,9 +115,9 @@ for b in range(num_buildings):
         min_data = np.min(np_train[train_start:train_end, i])
         max_data = np.max(np_train[train_start:train_end, i])
 
-        #if i == 1:
-            #np.save(f'min_max/min_{b}.npy', min_data)
-            #np.save(f'min_max/max_{b}.npy', max_data)
+        if i == 1:
+            np.save(f'data/min_max/min_{b}.npy', min_data)
+            np.save(f'data/min_max/max_{b}.npy', max_data)
 
         np_train[train_start:train_end, i] = (np_train[train_start:train_end, i] - min_data) / (max_data - min_data)
         np_test[test_start:test_end, i] = (np_test[test_start:test_end, i] - min_data) / (max_data - min_data)
