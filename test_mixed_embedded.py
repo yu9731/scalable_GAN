@@ -5,7 +5,6 @@ from keras.models import load_model
 import pandas as pd
 import keras
 
-
 keras.config.enable_unsafe_deserialization()
 
 pred_hour = 48
@@ -13,9 +12,7 @@ variable_num = 4
 e_dim = 64
 building_sample = 181 - (pred_hour - 24) // 24
 
-building_id_lst = [36, 38, 51]   # 36, 38, 51
-# [i for i in range(0, 54, 1)]
-# building_id_min_max_lst = np.load("when2heat-gnn/mixed_energy/idx_usage_type.npy")[36:54]
+building_id_lst = [i for i in range(0, 54, 1)]
 
 pd_nrmse = pd.DataFrame(columns=["building", "method", "missing duration", "nrmse"])
 pd_mae = pd.DataFrame(columns=["building", "method", "missing duration", "mae"])
@@ -71,17 +68,14 @@ class NaiveEmbedding(tf.keras.Model):
         return E
 
 generator = load_model(
-    "when2heat-gnn/mixed_energy/model/generator_aphere_random.h5",
+    "data/model/generator_aphere.h5",
     compile=False
 )
 # generator_aphere_random.h5
 print("✅ Generator loaded.")
 
-Node_feat = np.load("when2heat-gnn/mixed_energy/Node_feat.npy") #[36:54]
-# continual/Node_feat_continual.npy
-# mixed_energy/Node_feat.npy
+Node_feat = np.load("data/train_data/Node_feat.npy")
 N = Node_feat.shape[0]
-# Node_feat
 
 num_primary = 3
 num_subtypes = 5
@@ -103,9 +97,6 @@ node_feat_float = sqm_scaled.astype(np.float32)
 Node_feat_int_tf = tf.constant(node_ids_int, dtype=tf.int32)
 Node_feat_float_tf = tf.constant(node_feat_float, dtype=tf.float32)
 
-# -------------------------------------------------
-# Load naive embedding model
-# -------------------------------------------------
 naive_embed = NaiveEmbedding(
     N=N,
     num_primary=num_primary,
@@ -118,24 +109,17 @@ naive_embed = NaiveEmbedding(
 _ = naive_embed(Node_feat_int_tf, Node_feat_float_tf, training=False)
 
 naive_embed.load_weights(
-    "when2heat-gnn/mixed_energy/model/naive_embed_random.weights.h5"
+    "when2heat-gnn/mixed_energy/model/naive_embed.weights.h5"
 )
-print("✅ Naive embedding loaded.")
-# naive_embed_ori
-# naive_embed_random
 
-# Precompute node embeddings for all buildings
-E_all = naive_embed(Node_feat_int_tf, Node_feat_float_tf, training=False)   # (N, e_dim)
-#X_test = np.load("when2heat-gnn/mixed_energy/mixed_energy/mixed_test_continual_60.npy")#[building_sample*36:building_sample*54]
-#BID_test = np.load("when2heat-gnn/mixed_energy/mixed_energy/mixed_building_idx_continual_60_test.npy")#[building_sample*36:building_sample*54]
-X_test = np.load("when2heat-gnn/mixed_energy/mixed_energy/mixed_test.npy") #[building_sample*36:building_sample*54]
-BID_test = np.load("when2heat-gnn/mixed_energy/mixed_energy/mixed_building_idx_test.npy") #[building_sample*36:building_sample*54]
+E_all = naive_embed(Node_feat_int_tf, Node_feat_float_tf, training=False)
+X_test = np.load("data/train_data/mixed_test.npy")
+BID_test = np.load("data/train_data/mixed_building_idx_test.npy")
 
-# mask_len_lst = [6, 12, 18, 24, 30, 36, 42]
-mask_len_lst = [12, 24, 36]
+mask_len_lst = [6, 12, 18, 24, 30, 36, 42]
 
 for mask_len in mask_len_lst:
-    np_err = np.zeros((90 * mask_len, len(building_id_lst)))
+    np_err = np.zeros((90 * mask_len, len()))
 
     for k, building_id in enumerate(building_id_lst):
         x_in = X_test[building_sample * building_id:building_sample * (building_id + 1)]
@@ -144,31 +128,21 @@ for mask_len in mask_len_lst:
         pred_chunks = []
         true_chunks = []
 
-        #max_data = np.load(f"when2heat-gnn/min_max/max_{building_id_min_max_lst[k]}.npy")
-        #min_data = np.load(f"when2heat-gnn/min_max/min_{building_id_min_max_lst[k]}.npy")
-
-        max_data = np.load(f"when2heat-gnn/min_max/max_{building_id}.npy")
-        min_data = np.load(f"when2heat-gnn/min_max/min_{building_id}.npy")
+        max_data = np.load(f"data/min_max/max_{building_id}.npy")
+        min_data = np.load(f"data/min_max/min_{building_id}.npy")
 
         batch_size = 1
-        # for i in range(0, 90, batch_size):
-        # for i in range(90, 180, batch_size):
 
         for i in range(0, 90, 2):
         # for i in range(90, 180, 2):
-            # xb = tf.convert_to_tensor(x_in[i:i + batch_size], dtype=tf.float32)   # (B,48,4,1)
             xb = tf.convert_to_tensor(x_in[i:i + 1], dtype=tf.float32)
-            b = int(BID[i])  # building index used during training
+            b = int(BID[i])
             e = E_all[b:b+1]
-            #e = E_all[(b-36):(b-35)]
 
             masks, start_idx, end_idx = get_points(pred_hour, xb.shape[0], variable_num, mask_len)
             gen_input = xb * (1.0 - masks)
 
             yb = generator([gen_input, e], training=False)
-
-            # pred_chunks.append(yb.numpy()[:, start_idx:end_idx, :, :])
-            # true_chunks.append(xb.numpy()[:, start_idx:end_idx, :, :])
 
             combined = xb.numpy().copy()
             combined[:, start_idx:end_idx, :, :] = yb.numpy()[:, start_idx:end_idx, :, :]
@@ -201,29 +175,14 @@ for mask_len in mask_len_lst:
         print(f"NRMSE = {NRMSE:.4f}")
         print("====================================")
 
-        #plt.figure(figsize=(10, 4))
-        #plt.plot(true_load[0:24 * 12], label="True Load")
-        #plt.plot(pred_load[0:24 * 12], label="Simulated Load")
-        #plt.legend()
-        #plt.show()
+        plt.figure(figsize=(10, 4))
+        plt.plot(true_load[0:24 * 12], label="True Load")
+        plt.plot(pred_load[0:24 * 12], label="Simulated Load")
+        plt.legend()
+        plt.show()
 
         plt.figure(figsize=(10, 4))
         plt.plot(true_load[24*30:24*60], label="True Load")
         plt.plot(pred_load[24*30:24*60], label="Simulated Load")
         plt.legend()
         plt.show()
-
-        #pd_nrmse.loc[k] = [building_id, "Only office", mask_len, NRMSE]
-        #pd_mae.loc[k] = [building_id, 'Only office', mask_len, NMAE]
-
-        #pd_nrmse.loc[k] = [building_id, "Scratch", mask_len, NRMSE]
-        #pd_mae.loc[k] = [building_id, 'Scratch', mask_len, NMAE]
-
-        #np.save(f'visu_comparison/ori_{building_id}_{mask_len}.npy', true_load[24*30:24*60])
-        #np.save(f'visu_comparison/rec_{building_id}_{mask_len}.npy', pred_load[24*30:24*60])
-
-    #pd_nrmse.to_csv(f"result/mixed_energy/mixed_embedded_{mask_len}.csv", index=False)
-    #pd_mae.to_csv(f'result/mixed_energy/NMAE_mixed_embedded_{mask_len}.csv', index=False)
-
-    #pd_nrmse.to_csv(f"result/mixed_energy/mixed_60_ori_{mask_len}_warm_month.csv", index=False)
-    #pd_mae.to_csv(f'result/mixed_energy/NMAE_mixed_60_ori_{mask_len}_warm_month.csv', index=False)
